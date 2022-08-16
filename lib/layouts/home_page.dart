@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:badges/badges.dart';
+import 'package:ecom/controllers/addcart_controller.dart';
 import 'package:ecom/controllers/cart_controller.dart';
 import 'package:ecom/controllers/product_controller.dart';
 import 'package:ecom/models/cart_model.dart';
@@ -8,23 +10,27 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
+import 'cart_products.dart';
+
 class MyHomePage extends StatelessWidget {
   final productController = Get.put(ProductController());
-  final cartController = Get.put(CartController());
+  final addcartController = Get.put(AddCart());
   final box = GetStorage();
 
   @override
   Widget build(BuildContext context) {
-    productController.cartModel.value = cartController.cart.value;
     return Scaffold(
-      floatingActionButton: Obx(() => FloatingActionButton(
-            onPressed: () {
-              cartController.cart.clear();
-            },
-            child: Text(cartController.cart.length > 9
-                ? '9+'
-                : cartController.cart.length.toString()),
-          )),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: Obx(()=> FloatingActionButton(
+        onPressed: () {
+          Get.to(()=> CartProduct());
+        },
+        child: Badge(
+          badgeContent: Text(addcartController.products.length !=null?
+          addcartController.products.length.toString():"9"),
+          child: Icon(Icons.shopping_bag),
+        ),
+      )),
       appBar: AppBar(),
       body: Obx(() => productController.isLoading.value
           ? Center(
@@ -72,35 +78,9 @@ class MyHomePage extends StatelessWidget {
                             ElevatedButton(
                                 onPressed: () {}, child: Text('View')),
                             ElevatedButton(
-                                onPressed: () async {
-                                  var item = CartModel(
-                                      id: productController
-                                          .productList[index].id,
-                                      title: productController
-                                          .productList[index].title,
-                                      description: productController
-                                          .productList[index].description,
-                                      category: productController
-                                          .productList[index].category,
-                                      image: productController
-                                          .productList[index].image,
-                                      quantity: 1);
-                                  if (isExistInCart(
-                                      cartController.cart, item)) {
-                                    var productUpdate = cartController.cart
-                                        .firstWhere((element) =>
-                                            element.id ==
-                                            productController
-                                                .productList[index].id);
-                                    productUpdate.quantity += 1;
-                                  } else {
-                                    cartController.cart.add(item);
-                                    var jsonDbEncoded =
-                                        jsonEncode(cartController.cart);
-                                    await box.write('cart', jsonDbEncoded);
-                                    cartController.cart.refresh();
-                                  }
-                                },
+                               onPressed: (){
+                                 addcartController.addProducts(productController.productList[index]);
+                               },
                                 child: Text('Cart'))
                           ],
                         )
